@@ -1,19 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit"
-
 import { createSlice } from "@reduxjs/toolkit"
-
 import {
   createStateSyncMiddleware,
-  initMessageListener,
+  initStateWithPrevTab,
 } from "redux-state-sync"
+import { loadState } from "./localStorage"
 
-export const usersSlice = createSlice({
+const persistedState = loadState()
+
+const usersSlice = createSlice({
   name: "users",
-  initialState: [
-    { name: "Matheus", messages: [] },
-    { name: "jhon", messages: [] },
-    { name: "paul", messages: [] },
-  ],
+  initialState: persistedState?.users || [],
   reducers: {
     addUser: (state, action) => {
       let userAlreadyExistis = state.find(
@@ -39,6 +36,6 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(createStateSyncMiddleware({})),
 })
-initMessageListener(store)
+initStateWithPrevTab(store)
 
 export { store }

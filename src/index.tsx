@@ -9,6 +9,7 @@ import "bootstrap/dist/css/bootstrap.min.css"
 import { Provider } from "react-redux"
 import { store } from "./store"
 import Header from "./components/Header"
+import { saveState } from "./localStorage"
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,12 @@ const router = createBrowserRouter([
     element: <UserPage></UserPage>,
   },
 ])
+
+store.subscribe(() => {
+  saveState({
+    users: store.getState().users,
+  })
+})
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 root.render(

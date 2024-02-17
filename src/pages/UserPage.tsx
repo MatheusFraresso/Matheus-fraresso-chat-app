@@ -1,5 +1,6 @@
-import React, { ReactNode, useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import {
+  Badge,
   Card,
   Col,
   Form,
@@ -19,14 +20,12 @@ export default function UserPage() {
   const params = useParams()
   const dispatch = useDispatch()
   const [user, setUser] = useState<User>({ name: "", messages: [] })
+  const [messages, setMessages] = useState<Array<Message>>([])
   const [messageText, setMessageText] = useState<string>("")
   const [recipient, setRecipient] = useState<User>({
     name: "",
     messages: [],
   })
-
-  //Methods
-
   /**
    * sends message containing sender, recipient and text
    *
@@ -43,16 +42,17 @@ export default function UserPage() {
    * @param {Message} message
    */
   function parseMessage(message: Message) {
-    debugger
-    if (message.sender.name === user.name)
+    if (message.sender?.name === user?.name)
       return (
         <>
           <Col xs={6}></Col>
           <Col xs={6}>
-            {message.text}{" "}
-            <span className="small-text">
-              | at:{message.time.toLocaleString("pt-BR")}
-            </span>
+            <>
+              <Badge bg="success">{message.text} </Badge>
+              <span className="small-text">
+                | at: {new Date(message.time).toLocaleString("pt-BR")}
+              </span>
+            </>
           </Col>
         </>
       )
@@ -60,10 +60,12 @@ export default function UserPage() {
       return (
         <>
           <Col xs={6}>
-            {message.text}
-            <span className="small-text">
-              | at:{message.time.toLocaleDateString("pt-BR")}
-            </span>
+            <>
+              <Badge bg="info">{message.text}</Badge>
+              <span className="small-text">
+                | at:{new Date(message.time).toLocaleDateString("pt-BR")}
+              </span>
+            </>
           </Col>
           <Col xs={6}></Col>
         </>
@@ -72,60 +74,68 @@ export default function UserPage() {
 
   // Hooks
   const users = useSelector((state: any) => state.users)
+
   useEffect(() => {
     const selectedUser: User = users.find(
-      (user: User) => user.name === params.name
+      (user: User) => user?.name === params?.name
     )
     setUser(selectedUser)
   }, [users, params])
 
+  useEffect(() => {
+    const sender: User = users.find((u: User) => u?.name === params?.name)
+    const localRecipient: User = users.find(
+      (u: User) => u?.name === recipient?.name
+    )
+
+    const sortedMessages = [
+      ...(sender?.messages?.filter(
+        (msg: Message) => msg.recipient?.name === localRecipient?.name
+      ) || []),
+      ...(localRecipient?.messages?.filter(
+        (msg: Message) => msg.recipient?.name === sender?.name
+      ) || []),
+    ]
+    sortedMessages.sort(
+      (a: Message, b: Message) =>
+        new Date(a.time).getTime() - new Date(b.time).getTime()
+    )
+    setMessages(sortedMessages)
+  }, [users, recipient, params?.name])
+
   const otherUsers = useMemo(
-    () => users.filter((user: User) => user.name !== params.name),
+    () => users.filter((user: User) => user?.name !== params?.name),
     [users, params]
   )
 
-  const messages = useMemo(() => {
-    const recipientMessages = recipient.messages?.filter(
-      (message: Message) => message.recipient.name === user.name
-    )
-    const userMessages = user.messages?.filter(
-      (message: Message) => message.recipient.name === recipient.name
-    )
-    let sortedMessages = [...recipientMessages, ...userMessages]
-    sortedMessages.sort(
-      (a: Message, b: Message) => a.time?.getTime() - b.time?.getTime()
-    )
-    return sortedMessages
-  }, [recipient.messages, recipient.name, user.messages, user.name])
-
-  if (user.name)
+  if (user?.name)
     return (
       <section id="user">
         <Row>
           <Col xs={3} id="conversations">
             <Row>
-              <h4>Conversas de {user.name}:</h4>
+              <h4>Conversas de {user?.name}:</h4>
             </Row>
             <hr></hr>
             <ListGroup>
               {otherUsers.map((user: User) => (
                 <ListGroupItem
-                  variant={recipient.name === user.name ? "success" : "info"}
+                  variant={recipient?.name === user?.name ? "success" : "info"}
                   action
                   onClick={() => setRecipient(user)}
                 >
-                  {user.name}
+                  {user?.name}
                 </ListGroupItem>
               ))}
             </ListGroup>
           </Col>
           <Col xs={9} id="texts">
-            {!recipient.name ? (
+            {!recipient?.name ? (
               <></>
             ) : (
               <Card className="text-center conversation-card">
                 <Card.Header>
-                  <h2>{recipient.name}</h2>
+                  <h2>{recipient?.name}</h2>
                 </Card.Header>
                 <Card.Body>
                   <div className="previous-texts">
